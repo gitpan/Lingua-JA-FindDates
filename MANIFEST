@@ -1,0 +1,8 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+COPYING
+t/Lingua-JA-FindDates.t
+lib/Lingua/JA/FindDates.pm
+META.yml                                 Module meta-data (added by MakeMaker)
