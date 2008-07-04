@@ -4,3 +4,5 @@ Revision history for Perl extension Lingua::JA::FindDates.
 	- original version; created by h2xs 1.23 with options
 		-X -n Lingua::JA::FindDates
 
+0.002
+	Try to fix mojibake in search.cpan.org

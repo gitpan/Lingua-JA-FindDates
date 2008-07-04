@@ -1,3 +1,5 @@
+=encoding UTF-8
+
 =head1 NAME
 
 Lingua::JA::FindDates
@@ -89,7 +91,7 @@ our @ISA = qw(Exporter);
 
 @EXPORT_OK= qw/subsjdate kanji2number/;
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 use warnings;
 use strict;
 use utf8;
