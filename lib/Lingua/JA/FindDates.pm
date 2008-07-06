@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Lingua::JA::FindDates
+Lingua::JA::FindDates - find Japanese dates & convert them
 
 =head1 SYNOPSIS
 
@@ -76,6 +76,11 @@ which it can't cope with, please report that as a bug.
 
 =back
 
+=head2 More examples
+
+To see more examples, look at the testing code in
+C<t/Lingua-JA-FindDates.t>.
+
 =head2 Exports
 
 This module exports two functions, L<subsjdate> and L<kanji2number>.
@@ -91,7 +96,7 @@ our @ISA = qw(Exporter);
 
 @EXPORT_OK= qw/subsjdate kanji2number/;
 
-our $VERSION = '0.002';
+our $VERSION = '0.003';
 use warnings;
 use strict;
 use utf8;
@@ -432,7 +437,7 @@ year) are invalid.
 =item Only goes back to Meiji
 
 The date matching only goes back to the Meiji era. There is
-L<Date::Japanese::Era> if you need to go back further.
+L<DateTime::Calendar::Japanese::Era> if you need to go back further.
 
 =item Doesn't find dates in order
 
@@ -560,29 +565,20 @@ This module has a very full set of kanji / numeral convertors. It
 converts numbers including decimal points and numbers into the
 billions and trillions.
 
-=item L<Date::Japanese::Era>
+=item L<DateTime::Calendar::Japanese::Era>
 
-This module contains a full set of Japanese eras.
+This module contains a full set of Japanese eras in romaji.
 
 =back
 
-=head1 Copyright
+=head1 COPYRIGHT AND LICENCE
 
 Copyright (C) 2008 Ben Kasmin Bullock. All rights reserved.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public
-License along with this program.  If not, see
-<http://www.gnu.org/licenses/>.
+This module is distributed under the same terms as Perl itself, either
+Perl version 5.10.0 or, at your option, any later version of Perl 5
+you may have available.
 
 =cut
 
