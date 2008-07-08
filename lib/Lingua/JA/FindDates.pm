@@ -89,6 +89,7 @@ This module exports two functions, L<subsjdate> and L<kanji2number>.
 
 package Lingua::JA::FindDates;
 
+use 5.008000;
 require Exporter;
 use AutoLoader qw(AUTOLOAD);
 
@@ -96,7 +97,7 @@ our @ISA = qw(Exporter);
 
 @EXPORT_OK= qw/subsjdate kanji2number/;
 
-our $VERSION = '0.003';
+our $VERSION = '0.004';
 use warnings;
 use strict;
 use utf8;
@@ -296,6 +297,10 @@ my @jdatere = (
 # have months combined with them, so there is nothing to match a
 # fiscal year with a month.
 [$jyear.'度'                     , "en"],
+# Match a fiscal year (年度, nendo in Japanese). These usually don't
+# have months combined with them, so there is nothing to match a
+# fiscal year with a month.
+[$chryear.'度'                   , "n"],
 # Match a Japanese era, year
 [$jera.'\s*'.$jnumber.'\s*'.'年' , "ej"],
 # Match a Western year
@@ -303,7 +308,6 @@ my @jdatere = (
 # Match a month
 [$jnumber.'\s*月'                , "m"],
 );
-
 my @months = qw/Invalid January February March April May June July
 		August September October November December MM/;
 my @days = qw/Invalid Monday Tuesday Wednesday Thursday Friday Saturday Sunday/;

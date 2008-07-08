@@ -2,7 +2,7 @@
 use warnings;
 use strict;
 use utf8;
-use Test::More tests => 31;
+use Test::More tests => 34;
 
 BEGIN { use_ok('Lingua::JA::FindDates') };
 
@@ -75,6 +75,8 @@ Opera 9.51(Windows版)を入れてみたけれども相變らず使ひ物にな�
 　　　　　　午後六時半～九時（六時開場）
 H20年7月壁紙
 7月壁紙（1024×768）を作成しました（クリックすると拡大します）。
+昭和４９年度
+1999年度
 EOF
 
 my %jdates = 
@@ -90,6 +92,8 @@ my %jdates =
 'H20年7月' => 'July 2008',
 '7月' => 'July',
 '七月' => 'July',
+'昭和４９年度' => 'fiscal 1974',
+'1999年度' => 'fiscal 1999',
 );
 
 sub replace_callback
@@ -101,3 +105,4 @@ sub replace_callback
 
 subsjdate ($test5, \&replace_callback);
 
+ok ($Lingua::JA::FindDates::verbose == 0, 'verbose option switched off by default');
