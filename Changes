@@ -5,4 +5,22 @@ Revision history for Perl extension Lingua::JA::FindDates.
 		-X -n Lingua::JA::FindDates
 
 0.002
-	Try to fix mojibake in search.cpan.org
+
+* Fix mojibake in search.cpan.org by adding =encoding line at the top
+  of the module.
+
+0.003
+
+* Re-licensed to Perl licence.	
+
+0.004
+
+* Fixed bugs with fiscal years like ‚Q‚O‚O‚O”N“x, turned off
+  verboseness and added test to ensure that $verbose is switched off
+  for release versions to avoid this happening again in the future.
+
+0.005
+
+* Added support for ten day periods like ’†{ etc. 
+
+* Added support for intervals like •½¬‚P‚O”N‚RŒ‚P`‚S“ú.

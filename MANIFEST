@@ -5,3 +5,4 @@ README
 t/Lingua-JA-FindDates.t
 lib/Lingua/JA/FindDates.pm
 META.yml                                 Module meta-data (added by MakeMaker)
+example/test.pl

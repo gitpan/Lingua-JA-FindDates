@@ -1,22 +1,23 @@
-
+#! perl
 use warnings;
 use strict;
 use utf8;
-use Test::More tests => 38;
-
+use Test::More tests => 39;
+#use Test::More tests => 1;
+use lib './lib/';
 BEGIN { use_ok('Lingua::JA::FindDates') };
 
 use Lingua::JA::FindDates qw/kanji2number subsjdate/;
 
-#$JaDates::verbose = 1;
+$Lingua::JA::FindDates::verbose = 0;
 
 # If you are on Cygwin on Japanese Windows, use the following:
 
-#binmode STDOUT,":encoding(cp932)";
-#binmode STDERR,":encoding(cp932)";
-binmode STDOUT,":utf8";
-binmode STDERR,":utf8";
-
+binmode STDOUT,":encoding(cp932)";
+binmode STDERR,":encoding(cp932)";
+#binmode STDOUT,":utf8";
+#binmode STDERR,":utf8";
+#goto juntest;
 #print '百百三十五', "\n";
 #print JaDates::kanji2number ('3百三十五');
 ok (kanji2number ('3百三十五') == 0, 'bad kanji number failure test');
@@ -105,7 +106,15 @@ sub replace_callback
 
 subsjdate ($test5, \&replace_callback);
 
-ok ($Lingua::JA::FindDates::verbose == 0, 'verbose option switched off by default');
+#ok ($Lingua::JA::FindDates::verbose == 0, 'verbose option switched off by default');
+my @tests_jun = ('昭和41年3月初旬', 'Ｓ４１年三月上旬');#, '千九百六十六年３月初旬');
+for my $c (@tests_jun) {
+#    print "$c, [>>",subsjdate ($c),"<<]\n";
+#    print "Looking for $c\n";
+#    print $c, " ", subsjdate($c),"\n";
+    ok (subsjdate ($c) eq 'early March 1966', 'year/month/jun combination');
+#ok(1);
+}
 
 my @tests_interval = 
 ('昭和41年3月1〜12日',

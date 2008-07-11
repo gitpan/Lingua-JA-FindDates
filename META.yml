@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Lingua-JA-FindDates
-version:             0.004
+version:             0.005
 abstract:            find Japanese dates & convert them
 license:             ~
 author:              
