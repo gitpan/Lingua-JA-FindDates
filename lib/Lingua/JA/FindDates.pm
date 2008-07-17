@@ -19,6 +19,8 @@ prints
 
   March 16, 1966
 
+=over
+
 =item Find dates within a string
 
 This module finds dates and substitutes dates inside a string:
@@ -39,24 +41,27 @@ It can call back a routine each time a date is found:
   }
   my $dates = '三月１６日';
   my $data = 'xyz'; # something to send to replace_callback
-  subsjdate ($dates, \&replace_callback, $data);
+  subsjdate ($dates, {replace => \&replace_callback, data => $data});
 
 prints
 
   三月１６日 was replaced by March 16
 
-Use L<make_date_callback> to format the date any way:
+Use any routine to format the date any way:
 
   sub my_date
   {
-    return join '/', @_[1,2];
+    my ($date) = @_;
+    return join '/', $date->{month}."/".$date->{date};
   }
   my $dates = '三月１６日';
-  print subsjdate ($dates, undef, undef, \&my_date);
+  print subsjdate ($dates, {make_date => \&my_date});
 
 prints
 
   3/16
+
+=back
 
 =head1 DESCRIPTION
 
@@ -66,6 +71,8 @@ dates in a string. Dates includes year/month/day-style dates such as 平
 combinations such as years alone, years and months, month and day
 without a year, fiscal years, parts of the month like 中旬 (ch?jun),
 and periods of time.
+
+=over
 
 =item Matches 99.99% of Japanese dates
 
@@ -97,7 +104,7 @@ our @ISA = qw(Exporter);
 
 @EXPORT_OK= qw/subsjdate kanji2number/;
 
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 use warnings;
 use strict;
 use utf8;
@@ -148,6 +155,7 @@ sub kanji2number
 {
     my ($knum) = @_;
 #    print "$knum\n";
+    return 1 if $knum eq '元';
     my @kanjis = split '', $knum;
     my $value = 0;
     my $keta = 1;
@@ -218,7 +226,7 @@ M    => 1869,
 );
 
 # Japanese year, with era like "Heisei" at the beginning.
-my $jyear = $jera.'\s*'.$jnumber.'\s*年';
+my $jyear = $jera.'\s*('."$jdigit+|[$kanjidigits]+".'|元)\s*年';
 # Ten day periods (thirds of a month)
 my %jun = qw/初 1 上 1 中 2 下 3/;
 my @jun2english = ('invalid', 'early ', 'mid-', 'late ');
@@ -226,7 +234,13 @@ my @jun2english = ('invalid', 'early ', 'mid-', 'late ');
 my $weekdays = '月火水木金土日';
 my @weekdays = split '',$weekdays;
 # Match a string for a weekday, like 月曜日 or (日)
-my $match_weekday = '[（(]?(['.$weekdays.'])(?:曜日|曜)?[)）]?';
+# The long part (?=\W) is to stop it from accidentally matching a
+# kanji which is part of a different word, like the following:
+#平成二十年七月一日
+#    日本論・日本人論は非常に面白いものだ。
+my $match_weekday = '[（(]?(['.$weekdays.'])'.
+    '(?:(?:(?:曜日|曜)[)\）])|[)\）]|(?=\W))';
+#my $match_weekday = '[（(]?(['.$weekdays.'])(?:曜日|曜)?[)）]?';
 # Match a day of the month, like 10日
 my $match_dom = $jnumber.'\s*日';
 # Match a month
@@ -245,74 +259,93 @@ my $matchwymd = $wyear.'\s*'.$match_month_day;
 my $match_jyear_month = $jyear.'\s*'.$match_month;
 # Match a Western year and month only
 my $match_wyear_month = $wyear.'\s*'.$match_month;
+# Match a month, day, weekday.
+my $match_month_day_weekday = $match_month_day.'\s*'.$match_weekday;
 # Separators used in date strings
 my $separators = '\s*[〜−]\s*';
 # 
 
-=head2 Matching patterns
+# =head2 Matching patterns
 
-I<The module can be used without reading this section>.
+# I<The module can be used without reading this section>.
 
-The Japanese date regular expressions are stored in an array
-B<jdatere> containing a pair of a regular expression to match a kind
-of date, and a string like "ymdw" which contains letters saying what
-to do with $1, $2, etc. from the regular expression. The array
-B<jdatere> is ordered from longest match (like "year / month / day /
-weekday") to shortest (like "year" only). For example, if the first
-letter is "y", then $1 is a year in Western format like 2008, or if
-the third letter is "w", then $3 is the day of the week, from 1 to 7.
+# The Japanese date regular expressions are stored in an array
+# B<jdatere> containing a pair of a regular expression to match a kind
+# of date, and a string like "ymdw" which contains letters saying what
+# to do with $1, $2, etc. from the regular expression. The array
+# B<jdatere> is ordered from longest match (like "year / month / day /
+# weekday") to shortest (like "year" only). For example, if the first
+# letter is "y", then $1 is a year in Western format like 2008, or if
+# the third letter is "w", then $3 is the day of the week, from 1 to 7.
 
-=over
+# =over
 
-=item e
+# =item e
 
-Japanese era (string).
+# Japanese era (string).
 
-=item j
+# =item j
 
-Japanese year (string representing small number)
+# Japanese year (string representing small number)
 
-=item x
+# =item x
 
-empty month and day
+# empty month and day
 
-=item m
+# =item m
 
-month number (from 1 to 12, 13 for a blank month, 0 for an invalid month)
+# month number (from 1 to 12, 13 for a blank month, 0 for an invalid month)
 
-=item d
+# =item d
 
-day of month (from 1 to 31, 0 for an invalid day)
+# day of month (from 1 to 31, 0 for an invalid day)
 
-=item w
+# =item w
 
-weekday (from Monday = 1 to Sunday = 7, zero or undefined for an
-invalid weekday)
+# weekday (from Monday = 1 to Sunday = 7, zero or undefined for an
+# invalid weekday)
 
-=item z
+# =item z
 
-jun (旬), a ten day period.
+# jun (旬), a ten day period.
 
-=item 1
+# =item 1
 
-After another code, indicates the first of a pair of two things. For
-example, the matching code for
+# After another code, indicates the first of a pair of two things. For
+# example, the matching code for
 
-  平成９年１０月１７日〜２０日
+#   平成９年１０月１７日〜２０日
 
-is
+# is
 
-  ejmd1d2
+#   ejmd1d2
 
-=back
+# =back
 
-=cut
+# =cut
 
 my @jdatere = (
 # Match an empty string like 平成 月 日 as found on a form etc.
 [$jyear.'(\s+)月\s+日'          , "ejx"],
 # Add match for dummy strings here
 
+# Match a Japanese era, year, 2 x (month day weekday) combination
+[$matchymd.'\s*'.$match_weekday.$separators.
+ $match_month_day_weekday, "ejm1d1w1m2d2w2"],
+# Match a Japanese era, year, month 2 x (day, weekday) combination
+[$matchymd.$match_weekday.$separators.$match_dom.'\s*'.$match_weekday, 
+ "ejmd1w1d2w2"],
+# Match a Japanese era, year, month 2 x day combination
+[$matchymd.$separators.$match_dom.'\s*'.$match_weekday, "ejmd1d2"],
+# Match a Western year, 2x(month, day, weekday) combination
+[$matchwymd.'\s*'.$match_weekday.$separators.$match_month_day_weekday,
+ "ym1d1w1m2d2w2"],
+# Match a Western year, month, 2x(day, weekday) combination
+[$matchwymd.'\s*'.$match_weekday.$separators.$match_dom.'\s*'.$match_weekday,
+ "ymd1w1d2w2"],
+# Match a Western year, month, 2x(day) combination
+[$matchwymd.$separators.$match_dom,
+ "ymd1d2"],
 # Match a Japanese era, year, month1 day1 - month 2 day2 combination
 [$matchymd.$separators.$match_month_day, "ejm1d1m2d2"],
 # Match a Japanese era, year, month1 - month 2 combination
@@ -335,8 +368,17 @@ my @jdatere = (
 [$jyear.'\s*'.$jnumber.'\s*月' , "ejm"],
 # Match a Western year, month
 [$match_wyear_month     , "ym"],
+# Match 2 x (month, day, weekday)
+[$match_month_day_weekday.$separators.$match_month_day_weekday, 
+ "m1d1w1m2d2w2"],
+# Match month, 2 x (day, weekday)
+[$match_month_day_weekday.$separators.$match_dom.'\s*'.$match_weekday,
+ "md1w1d2w2"],
+# Match month, 2 x (day, weekday)
+[$match_month_day.$separators.$match_dom,
+ "md1d2"],
 # Match a month, day, weekday
-[$match_month_day.'\s*'.$match_weekday     , "mdw"],
+[$match_month_day_weekday     , "mdw"],
 # Match a month, day
 [$match_month_day              , "md"],
 # Match a fiscal year (年度, nendo in Japanese). These usually don't
@@ -366,47 +408,55 @@ my %j2eweekday;
 
 =over
 
-=item make_date ($year, $month1, $date1, $wday1, $jun, $month2, $date2, $wday2)
+=item make_date ($date)
 
 This is the default date making routine. It's not exported.
 
 L<subsjdate>, given a date like 平成２０年７月３日（木）, passes this
-routine the values (2008, 7, 3, 4) for the year, month, date and day
-of the week respectively. Then this makes a string 'Thursday, July 3,
-2008' and returns it to L<subsjdate>.
+routine a hash with values C<(year =>2008, month => 7, date => 3, wday
+=> 4)> for the year, month, date and day of the week
+respectively. Then this makes a string 'Thursday, July 3, 2008' and
+returns it to L<subsjdate>. If the particular dates aren't defined,
+for example in the case of a date ７月３日, the hash values for the
+keys of the unknowns, such as year or weekday, will be undefined.
 
 You can use any other format for the date by supplying your own
-L<make_date_callback> routine to L<subsjdate>.
+L<make_date> callback routine to L<subsjdate>.
 
 =back
 
 =cut
 
+sub print_error
+{
+    print STDERR __PACKAGE__,(caller(1))[3],": ",@_,"\n";
+}
+
 sub make_date
 {
-    my ($year, $month1, $date1, $wday, $jun, $month2, $date2) = @_;
+    my ($datehash) = @_;
+    my ($year, $month, $date, $wday, $jun) = 
+	@{$datehash}{qw/year month date wday jun/};
+    if (!$year && !$month && !$date && !$jun) {
+	print_error "No valid inputs\n";
+	return;
+    }
     my $edate = '';
     $edate = $days[$wday].", " if $wday;
-    if ($month1) {
-	$month1 = int ($month1); # In case it is 07 etc.
-	$edate .= $months[$month1];
-	if ($month2) {
-	    $edate .= '-'.$months[$month2];
-	}
+    if ($month) {
+	$month = int ($month); # In case it is 07 etc.
+	$edate .= $months[$month];
 	if ($jun) {
 	    $edate = $jun2english[$jun] . $edate;
 	}
     }
-    if ($date1) {
+    if ($date) {
 	$edate .= " " if length ($edate);
-	$date1 = int ($date1); # In case it is 07 etc.
-	if ($date2) {
-	    $date1 .= '-'.int($date2);
-	}
+	$date = int ($date); # In case it is 07 etc.
 	if ($year) {
-	    $edate .= "$date1, $year";
+	    $edate .= "$date, $year";
 	} else {
-	    $edate .= "$date1";
+	    $edate .= "$date";
 	}
     } elsif ($year) {
 	$edate .= " " if length ($edate);
@@ -414,6 +464,90 @@ sub make_date
     }
     return $edate;
 }
+
+=head2 make_date_interval
+
+Make a function to print out if there is an interval between the two
+dates. Takes two arguments, the first and second dates, in the same
+format as L<make_date>.
+
+=cut
+
+sub make_date_interval
+{
+    my ($date1, $date2) = @_;
+#     for my $k (sort keys %$date1) {
+# 	print "KEY1 $k: ",$date1->{$k},"\n";
+#     }
+#     for my $k (sort keys %$date2) {
+# 	print "KEY2 $k: ",$date2->{$k},"\n";
+#     }
+
+    my $einterval = '';
+    my $usecomma;
+    # The case of an interval with different years doesn't need to be
+    # considered, because each date in that case can be considered a
+    # single date.
+
+    if ($date2->{month}) {
+	if (!$date1->{month}) {
+	    print_error "end month but no starting month";
+	    return;
+	}
+    }
+    if ($date1->{month}) {
+#	print "First month is ",$date1->{month},"\n";
+	if ($date1->{wday} && $date2->{wday}) {
+	    if (! $date1->{date} || ! $date2->{date}) {
+		print_error "malformed date has weekdays but not days of month";
+		return;
+	    }
+	    $usecomma = 1;
+	    $einterval = $days[$date1->{wday}]  . " " . $date1->{date} .
+		         ($date2->{month} ? ' '.$months[int ($date1->{month})] : ''). '-' .
+		         $days[$date2->{wday}]  . " " . $date2->{date} . " " .
+			 ($date2->{month} ? $months[int ($date2->{month})] : $months[int ($date1->{month})]);
+	} elsif ($date1->{date} && $date2->{date}) {
+	    $usecomma = 1;
+	    if ($date1->{wday} || $date2->{wday}) {
+		print_error "malformed date interval: ",
+		    "has weekday for one date but not the other one.";
+		return;
+	    }
+#	    print "First month is ",$date1->{month},"\n";
+	    $einterval = $months[int ($date1->{month})] . ' ' .
+		         $date1->{date} . '-' .
+			 ($date2->{month} ? 
+			  $months[int ($date2->{month})] . ' ' : '') .
+		         $date2->{date};
+	} else { # no dates or weekdays
+	    if ($date1->{date} || $date2->{date}) {
+		print_error "malformed date interval: only one day of month";
+		return;
+	    }
+	    if (!$date2->{month}) {
+		print_error "start month but no end month or date";
+		return;
+	    }
+	    $einterval = $months[int($date1->{month})] . '-' . 
+		         $months[int($date2->{month})] .
+			 $einterval;
+	}
+    } else { # weekday - day / weekday - day case.
+	if ($date1->{wday} && $date2->{wday}) {
+	    if (! $date1->{date} || ! $date2->{date}) {
+		print_error "malformed date has weekdays but not days of month";
+		return;
+	    }
+	    $einterval = $date1->{wday}  . " " . $date1->{date} . '-' .
+		         $date2->{wday}  . " " . $date2->{date};
+	}
+    }
+    $einterval .= ($usecomma ? ', ': ' ').$date1->{year} if $date1->{year};
+    return $einterval;
+}
+
+
 
 =head2 $verbose
 
@@ -435,7 +569,7 @@ our $verbose = 0;
 
 =over
 
-=item subsjdate ($L<text>, $L<replace_callback>, $L<data>, $L<make_date_callback>)
+=item subsjdate ($L<text>, $L<callbacks>)
 
 "subsjdate", given a string (argument 1) containing some text like 平
 成２０年７月３日（木）, looks through the string using a set of
@@ -445,44 +579,52 @@ $text:
 
 C<$text =~ s/平成２０年７月３日（木）/Thursday, July 3, 2008/g>;
 
-Users can supply a different date making function. See
-L<make_date_callback>.
+Users can supply a different date making function. See below.
 
 =item text
 
-Argument one is a string of Japanese, encoded in Perl's internal
-encoding.
+A string, encoded in Perl's internal encoding.
 
-=item replace_callback
+=item callbacks
 
-If there is a replace_callback value in argument two, it calls that
-with the data in argument 3 and the before and after string. If you
-don't want to call anything, you can leave this blank. In the original
-script, see L<history>, replace_callback is a function which calls
-Microsoft Word via Win32::OLE.
+The hash reference C<$callbacks> can take the following items:
+
+=over 2
+
+=item replace
+
+If there is a replace value in the callbacks, subsjdate calls it as a
+subroutine with the data in C<$callbacks->{data}> and the before and
+after string.
 
 =item data
 
-Argument three is any data you want to pass to L<replace_callback>. In
-my original version, this is a reference to a hash which contains the
-document object to pass to Word.
+Any data you want to pass to the L<replace> callback.
 
-=item make_date_callback
+=item make_date
 
-Argument four is your replacement for the L<make_date> function. If
+This is a replacement for the L<make_date> function. If
 you don't need to replace the default (if you want American-style
 dates), you can leave this blank. If, for example, you want dates in
 the form "Th 2008/7/3", you could write a routine like the following:
 
   sub mymakedate
   {
-      my ($year, $month, $date, $wday) = @_;
-      return qw{Bad Mo Tu We Th Fr Sa Su}[$wday]." $year/$month/$date";
+      my ($date) = @_;
+      return qw{Bad Mo Tu We Th Fr Sa Su}[$date->{wday}].
+          $date->{year}.'/'.$date->{month}.'/'.$date->{date};
   }
 
-In practice you need to check for $year, $month, $date, and $wday
-being zero, since L<subsjdate> matches "month/day" and "year/month"
-only dates.
+Note that you need to check for the hash values for year, month,
+date, and wday being zero, since L<subsjdate> matches "month/day" and
+"year/month" only dates.
+
+=item make_date_interval
+
+This is a replacement for the L<make_date_interval> function. Its
+arguments are two dates.
+
+=back
 
 =back
 
@@ -512,6 +654,22 @@ for the second date before they are called for the first one.
 This module only understands Japanese encoded in Perl's internal form
 (UTF-8).
 
+=item Trips a bug in Perl 5.10
+
+If you send subsjdate a string which is pure ASCII, you'll get a
+stream of warning messages about "uninitialized value". The error
+messages are wrong - this is actually a bug in Perl, reported as bug
+number 56902. But sending this routine a string which is pure ASCII
+doesn't make sense anyway, so don't worry too much about it.
+
+=item Doesn't do 元日 (I<ganjitsu>)
+
+This date (another way to write "1st January") is a little difficult,
+since the characters which make it up could also occur in other
+contexts, like 元日本軍 I<gennihongun>, "the former Japanese
+military". Correctly parsing it requires a linguistic analysis of the
+text, which this module isn't able to do.
+
 =back
 
 =cut
@@ -522,63 +680,76 @@ sub subsjdate
     # internal encoding.
     # $replace_callback is a routine to call back if we find valid dates.
     # $data is arbitrary data to pass to the callback routine.
-    my ($text, $replace_callback, $data, $make_date_callback) = @_;
-
+    my ($text, $callbacks) = @_;
     for my $datere (@jdatere) {
 	my $regex = $$datere[0];
 	my @process = split (/(?=[a-z][12]?)/, $$datere[1]);
 	print "Looking for ",$$datere[1]," in ",$regex,"\n" if $verbose;
 	while ($text =~ /($regex)/g) {
+	    my $date1;
+	    my $date2;
 	    my $orig = $1;
-	    my @matches = ($2,$3,$4,$5,$6,$7); # uh - oh. Be careful!
-	    my ($year, @month, @date, $wday, $jun);
+#	    print "Keys are ",$$datere[1],"\n";
+	    my @matches = ($2,$3,$4,$5,$6,$7,$8,$9); # uh - oh. Be careful!
 	    print "Found '$orig': " if $verbose;
 	    for (0..$#matches) {
 		my $arg = $matches[$_];
+
 		last if !$arg;
 		$arg =~ s/([０-９])/$wtonarrow{$1}/g;
-		$arg =~ s/([$kanjidigits]+)/kanji2number($1)/ge;
+		$arg =~ s/([$kanjidigits]+|元)/kanji2number($1)/ge;
 		print "Arg $_: $arg " if $verbose;
 		my $argdo = $process[$_];
+#		print $argdo,"\n";
 		if ($argdo eq 'e') { # Era name in Japanese
-		    $year = $jera2w{$arg};
+		    $date1->{year} = $jera2w{$arg};
 		} elsif ($argdo eq 'j') { # Japanese year
-		    $year += $arg;
+		    $date1->{year} += $arg;
 		} elsif ($argdo eq 'y') {
-		    $year = $arg;
+		    $date1->{year} = $arg;
 		} elsif ($argdo eq 'n') {
-		    $year += $arg;
-		    $year = "fiscal ".$year;
+		    $date1->{year} += $arg;
+		    $date1->{year} = "fiscal ".$date1->{year};
 		} elsif ($argdo eq 'm' || $argdo eq 'm1') {
-		    $month[0] = $arg;
+		    $date1->{month} = $arg;
 		} elsif ($argdo eq 'd' || $argdo eq 'd1') {
-		    $date[0] = $arg;
+		    $date1->{date} = $arg;
 		} elsif ($argdo eq 'm2') {
-		    $month[1] = $arg;
+		    $date2->{month} = $arg;
 		} elsif ($argdo eq 'd2') {
-		    $date[1] = $arg;
-		} elsif ($argdo eq 'w') {
-		    $wday = $j2eweekday{$arg};
+		    $date2->{date} = $arg;
+		} elsif ($argdo eq 'w' || $argdo eq 'w1') {
+		    $date1->{wday} = $j2eweekday{$arg};
+		} elsif ($argdo eq 'w2') {
+#		    print "W2\n";
+		    $date2->{wday} = $j2eweekday{$arg};
 		} elsif ($argdo eq 'z') {
-		    $jun = $jun{$arg};
-#		    print "Jun of $arg is $jun\n";
+		    $date1->{jun} = $date1->{jun}{$arg};
+#		    print "Jun of $arg is $date1->{jun}\n";
 		} elsif ($argdo eq 'x') {
 		    print "Dummy date '$orig'.\n" if $verbose;
-		    $date[0]  = "DD";
-		    $month[0] = 13;
+		    $date1->{date}  = "DD";
+		    $date1->{month} = 13;
 		}
 	    }
 	    my $edate;
-	    if ($make_date_callback) {
-		$edate = &{$make_date_callback} 
-		    ($year, $month[0], $date[0], $wday, $jun, $month[1], $date[1]);
+	    if ($date2) {
+		if ($callbacks->{make_date_interval}) {
+		    $edate = &{$callbacks->{make_date_interval}} ($date1, $date2);
+		} else {
+		    $edate = make_date_interval ($date1, $date2);
+		}
 	    } else {
-		$edate = make_date ($year, $month[0], $date[0], $wday, $jun, $month[1], $date[1]);
+		if ($callbacks->{make_date}) {
+		    $edate = &{$callbacks->{make_date}}($date1);
+		} else {
+		    $edate = make_date ($date1);
+		}
 	    }
 	    print "-> '$edate'\n" if $verbose;
 	    $text =~ s/\Q$orig\E/$edate/g;
-	    if ($replace_callback) {
-		&{$replace_callback}($data, $orig, $edate);
+	    if ($callbacks->{replace}) {
+		&{$callbacks->{replace}}($callbacks->{data}, $orig, $edate);
 	    }
 	}
     }
@@ -589,23 +760,25 @@ sub subsjdate
 
 Ben Bullock, benkasminbullock@gmail.com
 
-=head1 History
+=cut
 
-This routine started life as a Visual Basic for Applications (VBA)
-script (a "Word Macro") to automatically convert Japanese dates in a
-Microsoft Word document into their equivalent English versions. See
-http://linuxtnt.wordpress.com/2008/04/16/visual-basic-date-translator-updated/
-. Eventually, because I kept finding exceptions & I didn't know Visual
-Basic well enough to code that efficiently, I decided to rewrite it
-all in Perl, using L<Win32::OLE> to automate the operation of
-Microsoft Word. (The Microsoft Word handlers are not included in this
-module.)
+# =head1 History
 
-The basic idea is to ask Word to save a copy of the file as text via
-OLE, then read the text file in to Perl, look for dates in the text
-using L<subsjdate>, and then call back into Microsoft Word using the
-L<replace_callback> argument to L<subsjdate> to substitute the
-Japanese dates with English ones.
+# This routine started life as a Visual Basic for Applications (VBA)
+# script (a "Word Macro") to automatically convert Japanese dates in a
+# Microsoft Word document into their equivalent English versions. See
+# http://linuxtnt.wordpress.com/2008/04/16/visual-basic-date-translator-updated/
+# . Eventually, because I kept finding exceptions & I didn't know Visual
+# Basic well enough to code that efficiently, I decided to rewrite it
+# all in Perl, using L<Win32::OLE> to automate the operation of
+# Microsoft Word. (The Microsoft Word handlers are not included in this
+# module.)
+
+# The basic idea is to ask Word to save a copy of the file as text via
+# OLE, then read the text file in to Perl, look for dates in the text
+# using L<subsjdate>, and then call back into Microsoft Word using the
+# L<replace> callback argument to L<subsjdate> to substitute the
+# Japanese dates with English ones.
 
 =head1 See also
 

@@ -2,7 +2,7 @@
 use warnings;
 use strict;
 use utf8;
-use Test::More tests => 38;
+use Test::More tests => 45;
 
 BEGIN { use_ok('Lingua::JA::FindDates') };
 
@@ -33,13 +33,15 @@ for my $d (@tests) {
 
 sub mymakedate
 {
-        my ($year, $month, $date, $wday) = @_;
-	return qw{Bad Mo Tu We Th Fr Sa Su}[$wday]." $year/$month/$date";
+    my ($datehash) = @_;
+    my ($year, $month, $date, $wday, $jun) = 
+	@{$datehash}{qw/year month date wday jun/};
+    return qw{Bad Mo Tu We Th Fr Sa Su}[$wday]." $year/$month/$date";
 }
 
 for my $d (@tests) {
 #    print subsjdate ($d);
-    ok (subsjdate ($d, undef, undef, \&mymakedate)
+    ok (subsjdate ($d, {make_date => \&mymakedate})
 	eq 'Th 2008/7/3', 'makedate_callback');
 }
 
@@ -103,7 +105,7 @@ sub replace_callback
     ok ($jdates{$jdate} eq $edate, "replace_callback");
 }
 
-subsjdate ($test5, \&replace_callback);
+subsjdate ($test5, {replace => \&replace_callback});
 
 ok ($Lingua::JA::FindDates::verbose == 0, 'verbose option switched off by default');
 
@@ -111,15 +113,36 @@ my @tests_interval =
 ('昭和41年3月1〜12日',
  '昭和41年3月1日〜12日',
  '昭和41年1〜12月',
- '昭和41年1月〜12月',);
+ '昭和41年1月〜12月',
+ '昭和41年3月1日〜4月12日',);
 
 for my $c (@tests_interval[0..1]) {
-#    print "Looking for $c\n";
-#    print $c, " ", subsjdate($c),"\n";
+    #print STDERR "Looking for $c\n";
+    #print STDERR $c, " ", subsjdate($c),"\n";
     ok (subsjdate($c) eq 'March 1-12, 1966', "two days interval");
 }
 for my $c (@tests_interval[2..3]) {
-#    print "Looking for $c\n";
-#    print $c, " ", subsjdate($c),"\n";
+    #print STDERR "Looking for $c\n";
+    #print STDERR $c, " ", subsjdate($c),"\n";
     ok (subsjdate($c) eq 'January-December 1966', "month-month interval");
 }
+for my $c (@tests_interval[4]) {
+    #print STDERR "Looking for $c\n";
+    #print STDERR $c, " ", subsjdate($c),"\n";
+    ok (subsjdate($c) eq 'March 1-April 12, 1966', "two days interval");
+}
+# Test there is no weird match to a following word.
+
+my $has_newline =<<EOF;
+平成二十年七月一日
+    日本論・日本人論は非常に面白いものだ。
+EOF
+
+ok (subsjdate($has_newline) !~ 'Sunday', 'do not match next kanji if it\'s not a weekday');
+
+ok (subsjdate('平成元年') eq '1989', 'gannen dates');
+
+ok (subsjdate('三月一日（木）〜３日（土）') eq 'Thursday 1-Saturday 3 March','interval with month, (day, weekday) x 2)');
+ok (subsjdate('2008年7月一日（木）〜八月３日（土)') eq 'Thursday 1 July-Saturday 3 August, 2008', 'interval with year, 2 x (month, day, weekday)');
+ok (subsjdate('2008年7月一日（木）〜３日（土)') eq 'Thursday 1-Saturday 3 July, 2008', 'interval with year, 2 x (month, day, weekday)');
+ok (subsjdate ('平成９年１０月１７日（火）〜２０日（金）') eq 'Tuesday 17-Friday 20 October, 1997');

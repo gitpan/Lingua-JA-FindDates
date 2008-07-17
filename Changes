@@ -24,3 +24,19 @@ Revision history for Perl extension Lingua::JA::FindDates.
 * Added support for ten day periods like ’†{ etc. 
 
 * Added support for intervals like •½¬‚P‚O”N‚RŒ‚P`‚S“ú.
+
+0.006
+
+* Fixed a bug with something like the second “ú in ‚PŒ‚P“ú “ú–{l˜_
+  being taken for Sunday.
+
+* Added Œ³”N to regex
+
+* Added note on bug 56902 in Perl.
+
+* Changed interfaces for callbacks and for passing date information.
+
+* Added intervals with weekdays like •½¬‚X”N‚P‚OŒ‚P‚V“úi‰Îj`‚Q‚O“úi‹àj
+
+* Trimmed documentation.
+
