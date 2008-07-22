@@ -67,18 +67,18 @@ prints
 
 This module uses a set of regular expressions to detect Japanese-style
 dates in a string. Dates includes year/month/day-style dates such as 平
-成20年七月十日 I<Heisei nij?nent?ka>, but may also include
+成20年七月十日 I<Heisei nijuunentooka>, but may also include
 combinations such as years alone, years and months, month and day
-without a year, fiscal years, parts of the month like 中旬 (ch?jun),
-and periods of time.
+without a year, fiscal years, parts of the month like 中旬 (chuujun),
+and periods between two dates.
 
 =over
 
 =item Matches 99.99% of Japanese dates
 
 This module has been road-tested on hundreds of documents, and it can
-cope with virtually any kind of Japanese date. If you find any date
-which it can't cope with, please report that as a bug.
+cope with virtually any kind of common Japanese date. If you find any
+date which it can't cope with, please report that as a bug.
 
 =back
 
@@ -102,9 +102,9 @@ use AutoLoader qw(AUTOLOAD);
 
 our @ISA = qw(Exporter);
 
-@EXPORT_OK= qw/subsjdate kanji2number/;
+@EXPORT_OK= qw/subsjdate/;
 
-our $VERSION = '0.006';
+our $VERSION = '0.007';
 use warnings;
 use strict;
 use utf8;
@@ -135,10 +135,11 @@ my $kanjidigits = join ('', keys %kanjinums);
 
 C<kanji2number> is a very simple kanji number convertor. Its input is
 one string of kanji numbers only, like '三十一'. It can deal with
-kanji numbers with or without ten/hundred/thousand kanjis.
+kanji numbers with or without ten/hundred/thousand kanjis. The return
+value is the numerical value of the kanji number, like 31, or zero if
+it can't read the number.
 
-The return value is the numerical value of the kanji number, like 31,
-or zero if it can't read the number.
+This function is not exported.
 
 =back
 
@@ -154,7 +155,6 @@ mixed kanji and arabic numbers.
 sub kanji2number
 {
     my ($knum) = @_;
-#    print "$knum\n";
     return 1 if $knum eq '元';
     my @kanjis = split '', $knum;
     my $value = 0;
@@ -240,7 +240,7 @@ my @weekdays = split '',$weekdays;
 #    日本論・日本人論は非常に面白いものだ。
 my $match_weekday = '[（(]?(['.$weekdays.'])'.
     '(?:(?:(?:曜日|曜)[)\）])|[)\）]|(?=\W))';
-#my $match_weekday = '[（(]?(['.$weekdays.'])(?:曜日|曜)?[)）]?';
+# my $match_weekday = '[（(]?(['.$weekdays.'])(?:曜日|曜)?[)）]?';
 # Match a day of the month, like 10日
 my $match_dom = $jnumber.'\s*日';
 # Match a month
@@ -262,7 +262,8 @@ my $match_wyear_month = $wyear.'\s*'.$match_month;
 # Match a month, day, weekday.
 my $match_month_day_weekday = $match_month_day.'\s*'.$match_weekday;
 # Separators used in date strings
-my $separators = '\s*[〜−]\s*';
+# Microsoft Word uses Unicode 0xFF5E, the "fullwidth tilde", for nyoro symbol.
+my $separators = '\s*[〜−~]\s*';
 # 
 
 # =head2 Matching patterns
@@ -410,18 +411,19 @@ my %j2eweekday;
 
 =item make_date ($date)
 
-This is the default date making routine. It's not exported.
+This is the default date making routine. It is not exported, because
+the user will substitute his or her own routine.
 
-L<subsjdate>, given a date like 平成２０年７月３日（木）, passes this
-routine a hash with values C<(year =>2008, month => 7, date => 3, wday
-=> 4)> for the year, month, date and day of the week
-respectively. Then this makes a string 'Thursday, July 3, 2008' and
-returns it to L<subsjdate>. If the particular dates aren't defined,
-for example in the case of a date ７月３日, the hash values for the
-keys of the unknowns, such as year or weekday, will be undefined.
+L<subsjdate>, given a date like 平成２０年７月３日（木）, passes
+make_date a hash reference with values C<(year =>2008, month => 7,
+date => 3, wday => 4)> for the year, month, date and day of the
+week. C<make_date> returns a string, 'Thursday, July 3, 2008'. If some
+fields of the date aren't defined, for example in the case of a date
+like ７月３日 (3rd July), the hash values for the keys of the unknown
+parts of the date, such as year or weekday, will be undefined.
 
-You can use any other format for the date by supplying your own
-L<make_date> callback routine to L<subsjdate>.
+You can use any other format for the date by supplying a C<make_date>
+callback to L<subsjdate>.
 
 =back
 
@@ -467,22 +469,21 @@ sub make_date
 
 =head2 make_date_interval
 
-Make a function to print out if there is an interval between the two
-dates. Takes two arguments, the first and second dates, in the same
-format as L<make_date>.
+This function is called when an interval of two dates, such as 平成３年
+７月２日〜９日, is detected. It makes a string to represent that
+interval in English. It takes two arguments, hash references to the
+first and second date. The hash references are in the same format as
+L<make_date>.
+
+This function is not exported. It is the default used by
+C<subsjdate>. You can use another function instead of this default by
+supplying a value C<make_date_interval> as a callback in L<subsjdate>.
 
 =cut
 
 sub make_date_interval
 {
     my ($date1, $date2) = @_;
-#     for my $k (sort keys %$date1) {
-# 	print "KEY1 $k: ",$date1->{$k},"\n";
-#     }
-#     for my $k (sort keys %$date2) {
-# 	print "KEY2 $k: ",$date2->{$k},"\n";
-#     }
-
     my $einterval = '';
     my $usecomma;
     # The case of an interval with different years doesn't need to be
@@ -496,7 +497,6 @@ sub make_date_interval
 	}
     }
     if ($date1->{month}) {
-#	print "First month is ",$date1->{month},"\n";
 	if ($date1->{wday} && $date2->{wday}) {
 	    if (! $date1->{date} || ! $date2->{date}) {
 		print_error "malformed date has weekdays but not days of month";
@@ -514,7 +514,6 @@ sub make_date_interval
 		    "has weekday for one date but not the other one.";
 		return;
 	    }
-#	    print "First month is ",$date1->{month},"\n";
 	    $einterval = $months[int ($date1->{month})] . ' ' .
 		         $date1->{date} . '-' .
 			 ($date2->{month} ? 
@@ -647,7 +646,9 @@ L<DateTime::Calendar::Japanese::Era> if you need to go back further.
 The dates returned won't be in the order that they are in the text,
 but in the order that they are found by the regular expressions, which
 means that in a string with two dates, the callbacks might be called
-for the second date before they are called for the first one.
+for the second date before they are called for the first
+one. Basically the longer forms of dates are searched for before the
+shorter ones.
 
 =item UTF-8 version only
 
@@ -814,7 +815,7 @@ This module contains a full set of Japanese eras in romaji.
 
 =head1 COPYRIGHT AND LICENCE
 
-Copyright (C) 2008 Ben Kasmin Bullock. All rights reserved.
+Copyright (C) 2008 Ben Kasmin Bullock.
 
 
 This module is distributed under the same terms as Perl itself, either

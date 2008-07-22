@@ -2,11 +2,11 @@
 use warnings;
 use strict;
 use utf8;
-use Test::More tests => 45;
+use Test::More tests => 46;
 
 BEGIN { use_ok('Lingua::JA::FindDates') };
 
-use Lingua::JA::FindDates qw/kanji2number subsjdate/;
+use Lingua::JA::FindDates qw/subsjdate/;
 
 #$JaDates::verbose = 1;
 
@@ -17,12 +17,10 @@ use Lingua::JA::FindDates qw/kanji2number subsjdate/;
 binmode STDOUT,":utf8";
 binmode STDERR,":utf8";
 
-#print '百百三十五', "\n";
-#print JaDates::kanji2number ('3百三十五');
-ok (kanji2number ('3百三十五') == 0, 'bad kanji number failure test');
-ok (kanji2number ('二百三十五') == 235, 'kanji number');
-ok (kanji2number ('二三五') == 235, 'kanji number');
-ok (kanji2number ('二三五五') == 2355, 'kanji number');
+ok (Lingua::JA::FindDates::kanji2number ('3百三十五') == 0, 'bad kanji number failure test');
+ok (Lingua::JA::FindDates::kanji2number ('二百三十五') == 235, 'kanji number');
+ok (Lingua::JA::FindDates::kanji2number ('二三五') == 235, 'kanji number');
+ok (Lingua::JA::FindDates::kanji2number ('二三五五') == 2355, 'kanji number');
 
 my @tests= qw/平成２０年７月３日（木） H二十年七月三日(木曜日) 二千八年7月三日(木曜)/;
 for my $d (@tests) {
@@ -146,3 +144,4 @@ ok (subsjdate('三月一日（木）〜３日（土）') eq 'Thursday 1-Saturday
 ok (subsjdate('2008年7月一日（木）〜八月３日（土)') eq 'Thursday 1 July-Saturday 3 August, 2008', 'interval with year, 2 x (month, day, weekday)');
 ok (subsjdate('2008年7月一日（木）〜３日（土)') eq 'Thursday 1-Saturday 3 July, 2008', 'interval with year, 2 x (month, day, weekday)');
 ok (subsjdate ('平成９年１０月１７日（火）〜２０日（金）') eq 'Tuesday 17-Friday 20 October, 1997');
+ok (subsjdate ('平成９年１０月１７日（火）~２０日（金）') eq 'Tuesday 17-Friday 20 October, 1997');
