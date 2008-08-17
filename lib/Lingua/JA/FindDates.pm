@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Lingua::JA::FindDates - find Japanese dates & convert them
+Lingua::JA::FindDates - scan text to find Japanese dates
 
 =head1 SYNOPSIS
 
@@ -89,8 +89,7 @@ at the testing code in C<t/Lingua-JA-FindDates.t>.
 
 =head2 Exports
 
-This module can export two functions, L<subsjdate> and
-L<kanji2number>, on request.
+This module exports one function, L<subsjdate>, on request.
 
 =cut
 
@@ -99,14 +98,12 @@ package Lingua::JA::FindDates;
 use 5.008000;
 require Exporter;
 use AutoLoader qw(AUTOLOAD);
-
 our @ISA = qw(Exporter);
-
 @EXPORT_OK= qw/subsjdate/;
-
-our $VERSION = '0.007';
+our $VERSION = '0.008';
 use warnings;
 use strict;
+use Carp;
 use utf8;
 
 my %kanjinums = 
@@ -165,8 +162,7 @@ sub kanji2number
 	return $value if !$k;
 	my $val = $kanjinums{$k};
 	if (!$val) {
-	    print STDERR __PACKAGE__,
-		"::kanji2number can't cope with '$k' of input '$knum'.\n";
+	    carp "can't cope with '$k' of input '$knum'.\n";
 	    return 0;
 	}
 	if ($val >= 10) {
@@ -177,8 +173,7 @@ sub kanji2number
 	    }
 	    my $val_next = $kanjinums{$knext};
 	    if (!$val_next) {
-		print STDERR __PACKAGE__,
-		    "::kanji2number can't cope with '$knext' of input '$knum'.\n";
+		carp "can't cope with '$knext' of input '$knum'.\n";
 		return 0;
 	    }
 	    if ($val_next > 10) {
@@ -299,7 +294,7 @@ my $separators = '\s*[〜−~]\s*';
 
 # =item d
 
-# day of month (from 1 to 31, 0 for an invalid day)
+# day of month (from 1 to 31, 32 for a blank day, 0 for an invalid day)
 
 # =item w
 
@@ -429,18 +424,13 @@ callback to L<subsjdate>.
 
 =cut
 
-sub print_error
-{
-    print STDERR __PACKAGE__,(caller(1))[3],": ",@_,"\n";
-}
-
 sub make_date
 {
     my ($datehash) = @_;
     my ($year, $month, $date, $wday, $jun) = 
 	@{$datehash}{qw/year month date wday jun/};
     if (!$year && !$month && !$date && !$jun) {
-	print_error "No valid inputs\n";
+	carp "No valid inputs\n";
 	return;
     }
     my $edate = '';
@@ -455,6 +445,7 @@ sub make_date
     if ($date) {
 	$edate .= " " if length ($edate);
 	$date = int ($date); # In case it is 07 etc.
+	$date = "DD" if $date == 32;
 	if ($year) {
 	    $edate .= "$date, $year";
 	} else {
@@ -492,14 +483,14 @@ sub make_date_interval
 
     if ($date2->{month}) {
 	if (!$date1->{month}) {
-	    print_error "end month but no starting month";
+	    carp "end month but no starting month";
 	    return;
 	}
     }
     if ($date1->{month}) {
 	if ($date1->{wday} && $date2->{wday}) {
 	    if (! $date1->{date} || ! $date2->{date}) {
-		print_error "malformed date has weekdays but not days of month";
+		carp "malformed date has weekdays but not days of month";
 		return;
 	    }
 	    $usecomma = 1;
@@ -510,7 +501,7 @@ sub make_date_interval
 	} elsif ($date1->{date} && $date2->{date}) {
 	    $usecomma = 1;
 	    if ($date1->{wday} || $date2->{wday}) {
-		print_error "malformed date interval: ",
+		carp "malformed date interval: ",
 		    "has weekday for one date but not the other one.";
 		return;
 	    }
@@ -521,11 +512,11 @@ sub make_date_interval
 		         $date2->{date};
 	} else { # no dates or weekdays
 	    if ($date1->{date} || $date2->{date}) {
-		print_error "malformed date interval: only one day of month";
+		carp "malformed date interval: only one day of month";
 		return;
 	    }
 	    if (!$date2->{month}) {
-		print_error "start month but no end month or date";
+		carp "start month but no end month or date";
 		return;
 	    }
 	    $einterval = $months[int($date1->{month})] . '-' . 
@@ -535,7 +526,7 @@ sub make_date_interval
     } else { # weekday - day / weekday - day case.
 	if ($date1->{wday} && $date2->{wday}) {
 	    if (! $date1->{date} || ! $date2->{date}) {
-		print_error "malformed date has weekdays but not days of month";
+		carp "malformed date has weekdays but not days of month";
 		return;
 	    }
 	    $einterval = $date1->{wday}  . " " . $date1->{date} . '-' .
@@ -660,8 +651,10 @@ This module only understands Japanese encoded in Perl's internal form
 If you send subsjdate a string which is pure ASCII, you'll get a
 stream of warning messages about "uninitialized value". The error
 messages are wrong - this is actually a bug in Perl, reported as bug
-number 56902. But sending this routine a string which is pure ASCII
-doesn't make sense anyway, so don't worry too much about it.
+number 56902
+(L<http://rt.perl.org/rt3/Public/Bug/Display.html?id=56902>). But
+sending this routine a string which is pure ASCII doesn't make sense
+anyway, so don't worry too much about it.
 
 =item Doesn't do 元日 (I<ganjitsu>)
 
@@ -729,7 +722,7 @@ sub subsjdate
 #		    print "Jun of $arg is $date1->{jun}\n";
 		} elsif ($argdo eq 'x') {
 		    print "Dummy date '$orig'.\n" if $verbose;
-		    $date1->{date}  = "DD";
+		    $date1->{date}  = 32;
 		    $date1->{month} = 13;
 		}
 	    }
@@ -809,7 +802,7 @@ billions and trillions.
 
 =item L<DateTime::Calendar::Japanese::Era>
 
-This module contains a full set of Japanese eras in romaji.
+This module contains a full set of Japanese eras.
 
 =back
 

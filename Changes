@@ -1,29 +1,19 @@
 Revision history for Perl extension Lingua::JA::FindDates.
 
-0.01  Fri Jul  4 19:03:14 2008
-	- original version; created by h2xs 1.23 with options
-		-X -n Lingua::JA::FindDates
+0.008 Sunday August 17th 2008
 
-0.002
+* Documentation fixes (see www.annocpan.org for details).
+* Bug fixes (see rt.cpan.org for details).
 
-* Fix mojibake in search.cpan.org by adding =encoding line at the top
-  of the module.
+0.007
 
-0.003
+* Rewrote some of the documentation
 
-* Re-licensed to Perl licence.	
+* Added nyoro 0xFF5E ("Fullwidth tilde") for Microsoft Word nyoro.
 
-0.004
+* Changed to Module::Install.
 
-* Fixed bugs with fiscal years like ‚Q‚O‚O‚O”N“x, turned off
-  verboseness and added test to ensure that $verbose is switched off
-  for release versions to avoid this happening again in the future.
-
-0.005
-
-* Added support for ten day periods like ’†{ etc. 
-
-* Added support for intervals like •½¬‚P‚O”N‚RŒ‚P`‚S“ú.
+* Stopped exporting kanji2number.
 
 0.006
 
@@ -39,4 +29,29 @@ Revision history for Perl extension Lingua::JA::FindDates.
 * Added intervals with weekdays like •½¬‚X”N‚P‚OŒ‚P‚V“úi‰Îj`‚Q‚O“úi‹àj
 
 * Trimmed documentation.
+
+0.005
+
+* Added support for ten day periods like ’†{ etc. 
+
+* Added support for intervals like •½¬‚P‚O”N‚RŒ‚P`‚S“ú.
+
+0.004
+
+* Fixed bugs with fiscal years like ‚Q‚O‚O‚O”N“x, turned off
+  verboseness and added test to ensure that $verbose is switched off
+  for release versions to avoid this happening again in the future.
+
+0.003
+
+* Re-licensed to Perl licence.	
+
+0.002
+
+* Fix mojibake in search.cpan.org by adding =encoding line at the top
+  of the module.
+
+0.01  Fri Jul  4 19:03:14 2008
+	- original version; created by h2xs 1.23 with options
+		-X -n Lingua::JA::FindDates
 

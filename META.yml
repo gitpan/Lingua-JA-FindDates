@@ -1,5 +1,5 @@
 ---
-abstract: 'find Japanese dates & convert them'
+abstract: 'scan text to find Japanese dates'
 author:
   - 'Ben Bullock, benkasminbullock@gmail.com'
 distribution_type: module
@@ -17,4 +17,4 @@ requires:
   perl: 5.8.0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.007
+version: 0.008

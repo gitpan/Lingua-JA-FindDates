@@ -2,7 +2,7 @@
 use warnings;
 use strict;
 use utf8;
-use Test::More tests => 46;
+use Test::More tests => 47;
 
 BEGIN { use_ok('Lingua::JA::FindDates') };
 
@@ -124,6 +124,7 @@ for my $c (@tests_interval[2..3]) {
     #print STDERR $c, " ", subsjdate($c),"\n";
     ok (subsjdate($c) eq 'January-December 1966', "month-month interval");
 }
+
 for my $c (@tests_interval[4]) {
     #print STDERR "Looking for $c\n";
     #print STDERR $c, " ", subsjdate($c),"\n";
@@ -145,3 +146,5 @@ ok (subsjdate('2008年7月一日（木）〜八月３日（土)') eq 'Thursday 1
 ok (subsjdate('2008年7月一日（木）〜３日（土)') eq 'Thursday 1-Saturday 3 July, 2008', 'interval with year, 2 x (month, day, weekday)');
 ok (subsjdate ('平成９年１０月１７日（火）〜２０日（金）') eq 'Tuesday 17-Friday 20 October, 1997');
 ok (subsjdate ('平成９年１０月１７日（火）~２０日（金）') eq 'Tuesday 17-Friday 20 October, 1997');
+
+ok (subsjdate ('平成９年 月　日') eq 'MM DD, 1997', "Blank dates");
