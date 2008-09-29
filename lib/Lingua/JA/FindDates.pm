@@ -100,7 +100,7 @@ require Exporter;
 use AutoLoader qw(AUTOLOAD);
 our @ISA = qw(Exporter);
 @EXPORT_OK= qw/subsjdate/;
-our $VERSION = '0.008';
+our $VERSION = '0.009';
 use warnings;
 use strict;
 use Carp;
@@ -718,8 +718,8 @@ sub subsjdate
 #		    print "W2\n";
 		    $date2->{wday} = $j2eweekday{$arg};
 		} elsif ($argdo eq 'z') {
-		    $date1->{jun} = $date1->{jun}{$arg};
-#		    print "Jun of $arg is $date1->{jun}\n";
+		    $date1->{jun} = $jun{$arg};
+#		    print "\n*Jun of $arg is ",$date1->{jun},"\n";
 		} elsif ($argdo eq 'x') {
 		    print "Dummy date '$orig'.\n" if $verbose;
 		    $date1->{date}  = 32;

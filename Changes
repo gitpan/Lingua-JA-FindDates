@@ -1,5 +1,9 @@
 Revision history for Perl extension Lingua::JA::FindDates.
 
+0.009 Monday September 29th 2008
+
+* Fixed bug with early / late
+
 0.008 Sunday August 17th 2008
 
 * Documentation fixes (see www.annocpan.org for details).

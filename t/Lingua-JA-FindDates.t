@@ -2,7 +2,7 @@
 use warnings;
 use strict;
 use utf8;
-use Test::More tests => 47;
+use Test::More tests => 48;
 
 BEGIN { use_ok('Lingua::JA::FindDates') };
 
@@ -148,3 +148,4 @@ ok (subsjdate ('平成９年１０月１７日（火）〜２０日（金）') e
 ok (subsjdate ('平成９年１０月１７日（火）~２０日（金）') eq 'Tuesday 17-Friday 20 October, 1997');
 
 ok (subsjdate ('平成９年 月　日') eq 'MM DD, 1997', "Blank dates");
+ok (subsjdate ('３月初旬') eq 'early March', "disappearing jun bug");
