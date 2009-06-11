@@ -2,10 +2,10 @@
 use warnings;
 use strict;
 use utf8;
-use Test::More tests => 48;
+use Test::More tests => 49;
 
 BEGIN { use_ok('Lingua::JA::FindDates') };
-
+use lib '../lib/';
 use Lingua::JA::FindDates qw/subsjdate/;
 
 #$JaDates::verbose = 1;
@@ -149,3 +149,10 @@ ok (subsjdate ('平成９年１０月１７日（火）~２０日（金）') eq 
 
 ok (subsjdate ('平成９年 月　日') eq 'MM DD, 1997', "Blank dates");
 ok (subsjdate ('３月初旬') eq 'early March', "disappearing jun bug");
+
+my $date_with_linebreak = <<EOF;
+平成21年
+11月 4日
+EOF
+ok (subsjdate ($date_with_linebreak) =~ /2009\nNovember 4/,
+    "Two dates on two lines not turned into one date");

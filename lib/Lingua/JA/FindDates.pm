@@ -100,7 +100,7 @@ require Exporter;
 use AutoLoader qw(AUTOLOAD);
 our @ISA = qw(Exporter);
 @EXPORT_OK= qw/subsjdate/;
-our $VERSION = '0.009';
+our $VERSION = '0.010';
 use warnings;
 use strict;
 use Carp;
@@ -221,7 +221,7 @@ M    => 1869,
 );
 
 # Japanese year, with era like "Heisei" at the beginning.
-my $jyear = $jera.'\s*('."$jdigit+|[$kanjidigits]+".'|元)\s*年';
+my $jyear = $jera.'\h*('."$jdigit+|[$kanjidigits]+".'|元)\h*年';
 # Ten day periods (thirds of a month)
 my %jun = qw/初 1 上 1 中 2 下 3/;
 my @jun2english = ('invalid', 'early ', 'mid-', 'late ');
@@ -237,28 +237,28 @@ my $match_weekday = '[（(]?(['.$weekdays.'])'.
     '(?:(?:(?:曜日|曜)[)\）])|[)\）]|(?=\W))';
 # my $match_weekday = '[（(]?(['.$weekdays.'])(?:曜日|曜)?[)）]?';
 # Match a day of the month, like 10日
-my $match_dom = $jnumber.'\s*日';
+my $match_dom = $jnumber.'\h*日';
 # Match a month
-my $match_month = $jnumber.'\s*月';
+my $match_month = $jnumber.'\h*月';
 # Match jun
-my $match_jun = '(['.join ('', keys %jun).'])\s*旬';
+my $match_jun = '(['.join ('', keys %jun).'])\h*旬';
 # Match a month+jun
-my $match_month_jun = $match_month.'\s*'.$match_jun;
+my $match_month_jun = $match_month.'\h*'.$match_jun;
 # Match a month and day of month pair
-my $match_month_day = $match_month.'\s*'.$match_dom;
+my $match_month_day = $match_month.'\h*'.$match_dom;
 # Match a Japanese year, month, day string
-my $matchymd = $jyear.'\s*'.$match_month_day;
+my $matchymd = $jyear.'\h*'.$match_month_day;
 # Match a Western year, month, day string
-my $matchwymd = $wyear.'\s*'.$match_month_day;
+my $matchwymd = $wyear.'\h*'.$match_month_day;
 # Match a Japanese year and month only
-my $match_jyear_month = $jyear.'\s*'.$match_month;
+my $match_jyear_month = $jyear.'\h*'.$match_month;
 # Match a Western year and month only
-my $match_wyear_month = $wyear.'\s*'.$match_month;
+my $match_wyear_month = $wyear.'\h*'.$match_month;
 # Match a month, day, weekday.
-my $match_month_day_weekday = $match_month_day.'\s*'.$match_weekday;
+my $match_month_day_weekday = $match_month_day.'\h*'.$match_weekday;
 # Separators used in date strings
 # Microsoft Word uses Unicode 0xFF5E, the "fullwidth tilde", for nyoro symbol.
-my $separators = '\s*[〜−~]\s*';
+my $separators = '\h*[〜−~]\h*';
 # 
 
 # =head2 Matching patterns
@@ -322,22 +322,22 @@ my $separators = '\s*[〜−~]\s*';
 
 my @jdatere = (
 # Match an empty string like 平成 月 日 as found on a form etc.
-[$jyear.'(\s+)月\s+日'          , "ejx"],
+[$jyear.'(\h+)月\h+日'          , "ejx"],
 # Add match for dummy strings here
 
 # Match a Japanese era, year, 2 x (month day weekday) combination
-[$matchymd.'\s*'.$match_weekday.$separators.
+[$matchymd.'\h*'.$match_weekday.$separators.
  $match_month_day_weekday, "ejm1d1w1m2d2w2"],
 # Match a Japanese era, year, month 2 x (day, weekday) combination
-[$matchymd.$match_weekday.$separators.$match_dom.'\s*'.$match_weekday, 
+[$matchymd.$match_weekday.$separators.$match_dom.'\h*'.$match_weekday, 
  "ejmd1w1d2w2"],
 # Match a Japanese era, year, month 2 x day combination
-[$matchymd.$separators.$match_dom.'\s*'.$match_weekday, "ejmd1d2"],
+[$matchymd.$separators.$match_dom.'\h*'.$match_weekday, "ejmd1d2"],
 # Match a Western year, 2x(month, day, weekday) combination
-[$matchwymd.'\s*'.$match_weekday.$separators.$match_month_day_weekday,
+[$matchwymd.'\h*'.$match_weekday.$separators.$match_month_day_weekday,
  "ym1d1w1m2d2w2"],
 # Match a Western year, month, 2x(day, weekday) combination
-[$matchwymd.'\s*'.$match_weekday.$separators.$match_dom.'\s*'.$match_weekday,
+[$matchwymd.'\h*'.$match_weekday.$separators.$match_dom.'\h*'.$match_weekday,
  "ymd1w1d2w2"],
 # Match a Western year, month, 2x(day) combination
 [$matchwymd.$separators.$match_dom,
@@ -345,30 +345,30 @@ my @jdatere = (
 # Match a Japanese era, year, month1 day1 - month 2 day2 combination
 [$matchymd.$separators.$match_month_day, "ejm1d1m2d2"],
 # Match a Japanese era, year, month1 - month 2 combination
-[$jyear.'\s*'.$jnumber.'\s*月?'.$separators.$match_month, "ejm1m2"],
+[$jyear.'\h*'.$jnumber.'\h*月?'.$separators.$match_month, "ejm1m2"],
 # Match a Japanese era, year, month, day1 - day2 combination
-[$match_jyear_month.'\s*'.$jnumber.'\s*日?'.$separators.$match_dom, "ejmd1d2"],
+[$match_jyear_month.'\h*'.$jnumber.'\h*日?'.$separators.$match_dom, "ejmd1d2"],
 # Match a Japanese era, year, month, day, weekday combination
-[$matchymd.'\s*'.$match_weekday     , "ejmdw"],
+[$matchymd.'\h*'.$match_weekday     , "ejmdw"],
 # Match a Japanese era, year, month, day
 [$matchymd                     , "ejmd"],
 # Match a Japanese era, year, month, jun
-[$match_jyear_month.'\s*'.$match_jun    , "ejmz"],
+[$match_jyear_month.'\h*'.$match_jun    , "ejmz"],
 # Match a Western year, month, day, weekday combination
-[$matchwymd.'\s*'.$match_weekday    , "ymdw"],
+[$matchwymd.'\h*'.$match_weekday    , "ymdw"],
 # Match a Western year, month, day combination
 [$matchwymd           	       , "ymd"],
 # Match a Western year, month, jun combination
-[$match_wyear_month.'\s*'.$match_jun     , "ymz"],
+[$match_wyear_month.'\h*'.$match_jun     , "ymz"],
 # Match a Japanese era, year, month
-[$jyear.'\s*'.$jnumber.'\s*月' , "ejm"],
+[$jyear.'\h*'.$jnumber.'\h*月' , "ejm"],
 # Match a Western year, month
 [$match_wyear_month     , "ym"],
 # Match 2 x (month, day, weekday)
 [$match_month_day_weekday.$separators.$match_month_day_weekday, 
  "m1d1w1m2d2w2"],
 # Match month, 2 x (day, weekday)
-[$match_month_day_weekday.$separators.$match_dom.'\s*'.$match_weekday,
+[$match_month_day_weekday.$separators.$match_dom.'\h*'.$match_weekday,
  "md1w1d2w2"],
 # Match month, 2 x (day, weekday)
 [$match_month_day.$separators.$match_dom,
@@ -390,7 +390,7 @@ my @jdatere = (
 # Match a Western year
 [$wyear                        , "y"],
 # Match a month with a jun
-[$match_month.'\s*'.$match_jun , "mz"],
+[$match_month.'\h*'.$match_jun , "mz"],
 # Match a month
 [$match_month                    , "m"],
 );
@@ -548,7 +548,7 @@ If you want to see what the module is doing, set
 This makes L<subsjdate> print out each regular expression and reports
 whether it matched, which looks like this:
 
-  Looking for y in ([０-９0-9]{4}|[十六七九五四千百二一八三]?千[十六七九五四千百二一八三]*)\s*年
+  Looking for y in ([０-９0-9]{4}|[十六七九五四千百二一八三]?千[十六七九五四千百二一八三]*)\h*年
   Found '千九百六十六年': Arg 0: 1966 -> '1966'
 
 =cut
