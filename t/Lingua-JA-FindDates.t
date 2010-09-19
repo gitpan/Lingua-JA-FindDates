@@ -2,10 +2,10 @@
 use warnings;
 use strict;
 use utf8;
-use Test::More tests => 49;
+use Test::More tests => 50;
 
 BEGIN { use_ok('Lingua::JA::FindDates') };
-use lib '../lib/';
+
 use Lingua::JA::FindDates qw/subsjdate/;
 
 #$JaDates::verbose = 1;
@@ -156,3 +156,6 @@ my $date_with_linebreak = <<EOF;
 EOF
 ok (subsjdate ($date_with_linebreak) =~ /2009\nNovember 4/,
     "Two dates on two lines not turned into one date");
+# $Lingua::JA::FindDates::verbose = 1;
+#print subsjdate ('\'79年4月21日');
+ok (subsjdate ('\'79年4月21日') eq 'April 21, \'79', "Apostrophe dates");

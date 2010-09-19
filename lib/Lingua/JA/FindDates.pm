@@ -6,11 +6,11 @@ Lingua::JA::FindDates - scan text to find Japanese dates
 
 =head1 SYNOPSIS
 
-Find and replace Japanese dates in a string.
+To find and replace Japanese dates in a string,
 
   use Lingua::JA::FindDates 'subsjdate';
 
-Given a string, find and substitute all the Japanese dates in it.
+  # Given a string, find and substitute all the Japanese dates in it.
 
   my $dates = '昭和４１年三月１６日';
   print subsjdate ($dates);
@@ -19,11 +19,7 @@ prints
 
   March 16, 1966
 
-=over
-
-=item Find dates within a string
-
-This module finds dates and substitutes dates inside a string:
+Find and substitute Japanese dates within a string:
 
   my $dates = 'blah blah blah 三月１６日';
   print subsjdate ($dates);
@@ -32,7 +28,8 @@ prints
 
   blah blah blah March 16
 
-It can call back a routine each time a date is found:
+C<subsjdate> can also call back a user-supplied routine each
+time a date is found:
 
   sub replace_callback
   {
@@ -47,7 +44,8 @@ prints
 
   三月１６日 was replaced by March 16
 
-Use any routine to format the date any way:
+You can also use a routine to format the date any way, letting
+C<subsjdate> print it for you:
 
   sub my_date
   {
@@ -57,7 +55,7 @@ Use any routine to format the date any way:
   my $dates = '三月１６日';
   print subsjdate ($dates, {make_date => \&my_date});
 
-prints
+This prints
 
   3/16
 
@@ -66,19 +64,21 @@ prints
 =head1 DESCRIPTION
 
 This module uses a set of regular expressions to detect Japanese-style
-dates in a string. Dates includes year/month/day-style dates such as 平
-成20年七月十日 I<Heisei nijuunentooka>, but may also include
-combinations such as years alone, years and months, month and day
-without a year, fiscal years, parts of the month like 中旬 (chuujun),
-and periods between two dates.
+dates in a string.  It recognizes typical Japanese
+year/month/day-style dates such as 平成20年七月十日 I<Heisei nijuunen
+shichigatsu tooka>. It also recognizes combinations such as years
+alone, years and months, a month and day without a year, fiscal years,
+parts of the month like 中旬 (chuujun, the middle of the month), and
+periods between two dates.
 
 =over
 
 =item Matches 99.99% of Japanese dates
 
 This module has been road-tested on hundreds of documents, and it can
-cope with virtually any kind of common Japanese date. If you find any
-date which it can't cope with, please report that as a bug.
+cope with virtually any kind of common Japanese date. If you find that
+it cannot identify some kind of date within Japanese text, please
+report that as a bug.
 
 =back
 
@@ -100,7 +100,7 @@ require Exporter;
 use AutoLoader qw(AUTOLOAD);
 our @ISA = qw(Exporter);
 @EXPORT_OK= qw/subsjdate/;
-our $VERSION = '0.010';
+our $VERSION = '0.011';
 use warnings;
 use strict;
 use Carp;
@@ -143,9 +143,9 @@ This function is not exported.
 =head3 Bugs
 
 kanji2number only goes up to thousands, because usually dates only go
-that far. If you need a comprehensive Japanese number convertor, use
-L<Lingua::JA::Numbers> instead of this. Also, it doesn't deal with
-mixed kanji and arabic numbers.
+that far. If you need a comprehensive Japanese number convertor, we
+recommend using L<Lingua::JA::Numbers> instead of this. Also, it
+doesn't deal with mixed kanji and arabic numbers.
 
 =cut
 
@@ -199,7 +199,9 @@ my $jdigit = '[０-９0-9]';
 # Japanese number
 my $jnumber = "($jdigit+|[$kanjidigits]+)";
 # Western year
-my $wyear = '('.$jdigit.'{4}|['.$kanjidigits.']?千['.$kanjidigits.']*)\s*年';
+my $wyear = '('.$jdigit.'{4}|['.$kanjidigits.']?千['.$kanjidigits.']*|'.
+    '[\']'.$jdigit.'{2}'.
+    ')\s*年';
 
 # Japanese eras (Heisei, Showa, Taisho, Meiji). Japanese people
 # sometimes write these eras using the letters H, S, T, and M.
@@ -322,7 +324,7 @@ my $separators = '\h*[〜−~]\h*';
 
 my @jdatere = (
 # Match an empty string like 平成 月 日 as found on a form etc.
-[$jyear.'(\h+)月\h+日'          , "ejx"],
+[$jyear.'(\h+)月\h+日', "ejx"],
 # Add match for dummy strings here
 
 # Match a Japanese era, year, 2 x (month day weekday) combination
@@ -406,19 +408,33 @@ my %j2eweekday;
 
 =item make_date ($date)
 
-This is the default date making routine. It is not exported, because
-the user will substitute his or her own routine.
+C<make_date> is the default date-string-making routine. It turns the
+date information supplied to it into a string representing the
+date. C<make_date> is not exported.
 
-L<subsjdate>, given a date like 平成２０年７月３日（木）, passes
-make_date a hash reference with values C<(year =>2008, month => 7,
-date => 3, wday => 4)> for the year, month, date and day of the
-week. C<make_date> returns a string, 'Thursday, July 3, 2008'. If some
-fields of the date aren't defined, for example in the case of a date
-like ７月３日 (3rd July), the hash values for the keys of the unknown
-parts of the date, such as year or weekday, will be undefined.
+L<subsjdate>, given a date like 平成２０年７月３日（木） (Heisei year
+20, month 7, day 3, in other words "Thursday the third of July,
+2008"), passes C<make_date> a hash reference with values (year =>2008,
+month => 7, date => 3, wday => 4) for the year, month, date and day of
+the week. C<make_date> returns a string, 'Thursday, July 3, 2008'. If
+some fields of the date aren't defined, for example in the case of a
+date like ７月３日 (3rd July), the hash values for the keys of the
+unknown parts of the date, such as year or weekday, will be undefined.
 
-You can use any other format for the date by supplying a C<make_date>
-callback to L<subsjdate>.
+To replace the default routine C<make_date> with a different format,
+supply a C<make_date> callback to L<subsjdate>:
+
+  sub my_date
+  {
+    my ($date) = @_;
+    return join '/', $date->{month}."/".$date->{date};
+  }
+  my $dates = '三月１６日';
+  print subsjdate ($dates, {make_date => \&my_date});
+
+This prints
+
+  3/16
 
 =back
 
@@ -773,6 +789,12 @@ Ben Bullock, benkasminbullock@gmail.com
 # using L<subsjdate>, and then call back into Microsoft Word using the
 # L<replace> callback argument to L<subsjdate> to substitute the
 # Japanese dates with English ones.
+
+=head1 Motivation
+
+The motivation for creating this module was as a form of assistance
+for translation of documents from Japanese into English, especially
+documents containing a large number of dates. 
 
 =head1 See also
 
