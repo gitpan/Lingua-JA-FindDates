@@ -1,6 +1,16 @@
-use 5.010000;
-use inc::Module::Install;
+use strict;
+use warnings;
+use ExtUtils::MakeMaker;
 
-name 'Lingua-JA-FindDates';
-all_from 'lib/Lingua/JA/FindDates.pm';
-WriteAll;
+my $pm = 'lib/Lingua/JA/FindDates.pm';
+
+WriteMakefile (
+    NAME => 'Lingua::JA::FindDates',
+    VERSION_FROM => $pm,
+    ABSTRACT_FROM => $pm,
+    LICENSE => 'perl',
+    AUTHOR => 'Ben Bullock <bkb@cpan.org>',
+    EXE_FILES => [
+        'script/subsjdate',
+    ],
+);

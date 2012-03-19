@@ -1,13 +1,13 @@
 ---
-abstract: 'scan text to find Japanese dates'
+abstract: 'scan text to find dates in a Japanese format'
 author:
-  - 'Ben Bullock, benkasminbullock@gmail.com'
+  - 'Ben Bullock <bkb@cpan.org>'
 build_requires:
-  ExtUtils::MakeMaker: 6.42
+  ExtUtils::MakeMaker: 0
 configure_requires:
-  ExtUtils::MakeMaker: 6.42
-distribution_type: module
-generated_by: 'Module::Install version 0.91'
+  ExtUtils::MakeMaker: 0
+dynamic_config: 1
+generated_by: 'ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.113640'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -15,10 +15,7 @@ meta-spec:
 name: Lingua-JA-FindDates
 no_index:
   directory:
-    - inc
     - t
-requires:
-  perl: 5.8.0
-resources:
-  license: http://dev.perl.org/licenses/
-version: 0.011
+    - inc
+requires: {}
+version: 0.012
