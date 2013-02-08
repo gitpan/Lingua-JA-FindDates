@@ -21,4 +21,4 @@ requires: {}
 resources:
   bugtracker: https://github.com/benkasminbullock/Lingua--JA--FindDates/issues
   repository: https://github.com/benkasminbullock/Lingua--JA--FindDates
-version: 0.016
+version: 0.017

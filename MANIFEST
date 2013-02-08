@@ -5,5 +5,7 @@ MANIFEST			This list of files
 MANIFEST.SKIP
 script/subsjdate
 t/Lingua-JA-FindDates.t
+t/nengo-to-seireki.t
+t/seireki-to-nengo.t
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)

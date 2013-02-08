@@ -4,8 +4,8 @@ use 5.010000;
 require Exporter;
 use AutoLoader qw(AUTOLOAD);
 our @ISA = qw(Exporter);
-@EXPORT_OK= qw/subsjdate kanji2number/;
-our $VERSION = '0.016';
+@EXPORT_OK= qw/subsjdate kanji2number seireki_to_nengo nengo_to_seireki/;
+our $VERSION = '0.017';
 use warnings;
 use strict;
 use Carp;
@@ -853,7 +853,139 @@ sub subsjdate
     return $text;
 }
 
+sub nengo_to_seireki
+{
+    my ($text) = @_;
+    my %data;
+    $data{count} = 0;
+
+    my $out_text = subsjdate (
+        $text, {
+            make_date => \& nengo_to_seireki_make_date, 
+            data => \%data,
+        }
+    );
+    $out_text =~ s/#REPLACEME(\d+)REPLACEME#/$data{$1}/g;
+    return $out_text;
+}
+
+sub nengo_to_seireki_make_date
+{
+    my ($data, $original, $date) = @_;
+    if ($date->{year}) {
+        $original =~ s/.*年/$date->{year}年/;
+        my $count = $data->{count};
+        $data->{$count} = $original;
+        $data->{count}++;
+        return "#REPLACEME${count}REPLACEME#";
+    }
+    else {
+        return $original;
+    }
+}
+
+sub seireki_to_nengo
+{
+    my ($text) = @_;
+    my %data;
+    $data{count} = 0;
+
+    my $out_text = subsjdate (
+        $text, {
+            make_date => \& seireki_to_nengo_make_date, 
+            data => \%data,
+        }
+    );
+    $out_text =~ s/#REPLACEME(\d+)REPLACEME#/$data{$1}/g;
+    return $out_text;
+}
+
+sub seireki_to_nengo_make_date
+{
+    my ($data, $original, $date) = @_;
+    my $year = $date->{year};
+    my @eras = (
+        ['平成', 1989, 1, 8],
+        ['昭和', 1926, 12, 25],
+        ['大正', 1912, 7, 30],
+        ['明治', 1868, 1, 25],
+    );
+    if (defined $year) {
+        for my $era (@eras) {
+            my $ename = $era->[0];
+            my $eyear = $era->[1];
+            my $emonth = $era->[2];
+            my $eday = $era->[3];
+            my $month = $date->{month};
+            my $date = $date->{date};
+
+            # This is a flag which says whether to perform a
+            # substitution of the year or not.
+
+            my $subs;
+
+            # If the year is greater than the era year, or if the year
+            # is the same as the era year and we do not know the
+            # month, just replace.
+
+            if ($year > $eyear ||
+                ($year == $eyear && ! defined ($month))) {
+                $subs = 1;
+            }
+
+            # If the year is the same, and there is a month
+
+            elsif ($year == $eyear && defined ($month)) {
+
+                # If there is a day of the month, then only substitute
+                # if the month is greater than the changeover month,
+                # or the month is the same, and the day of the month
+                # is greater than or equal to the changeover day of
+                # the month.
+
+                if (defined ($date)) {
+                    if ($month > $emonth ||
+                        ($month == $emonth && $date >= $eday)) {
+                        $subs = 1;
+                    }
+                }
+
+                # If we don't know the day of the month, substitute if
+                # the month is greater than or equal to the changeover
+                # month.
+
+                elsif ($month >= $emonth) {
+                    $subs = 1;
+                }
+            }
+            if ($subs) {
+
+                # Only substitute if we need to.
+
+                if ($original !~ /$ename/) {
+
+                    # The year counting starts from 1, so we add 1 to
+                    # the difference.
+
+                    my $hyear = $year - $eyear + 1;
+                    $original =~ s/\d+年/$ename${hyear}年/;
+                }
+
+                # Don't replace again, stop the loop.
+
+                last;
+            }
+        }
+    }
+    my $count = $data->{count};
+    $data->{$count} = $original;
+    $data->{count}++;
+
+    # This is a tag for substituting with.
+
+    return "#REPLACEME${count}REPLACEME#";
+}
+
 1;
 
 __END__
-
