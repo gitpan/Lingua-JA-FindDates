@@ -5,7 +5,7 @@ require Exporter;
 use AutoLoader qw(AUTOLOAD);
 our @ISA = qw(Exporter);
 @EXPORT_OK= qw/subsjdate kanji2number seireki_to_nengo nengo_to_seireki/;
-our $VERSION = '0.017';
+our $VERSION = '0.018';
 use warnings;
 use strict;
 use Carp;
@@ -130,7 +130,9 @@ my $alpha_era = qr/
 
 my $jera = qr/($alpha_era|平成|昭和|大正|明治)/;
 
-# A map of Japanese eras to Western dates.
+# A map of Japanese eras to Western dates. These are the starting year
+# of the period minus one, to allow for that the first year is "heisei
+# one" rather than "heisei zero".
 
 my %jera2w = (
     H    => 1988,
@@ -142,9 +144,9 @@ my %jera2w = (
     T    => 1911,
     Ｔ   => 1911,
     大正 => 1911,
-    M    => 1869,
-    Ｍ   => 1869,
-    明治 => 1869,
+    M    => 1867,
+    Ｍ   => 1867,
+    明治 => 1867,
 );
 
 # Japanese year, with era like "Heisei" at the beginning.
