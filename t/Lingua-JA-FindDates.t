@@ -3,6 +3,8 @@ use strict;
 use utf8;
 use Test::More;
 
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
 my $builder = Test::More->builder;
 binmode $builder->output,         ":utf8";
 binmode $builder->failure_output, ":utf8";
